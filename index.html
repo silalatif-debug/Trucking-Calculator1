@@ -131,49 +131,33 @@
     const googleMapsKey = 'AIzaSyC7QgY6929x9vWhHGcneEOEH8U9V16HJeI'; // From console.cloud.google.com
     // >>>>>>>>>>> REPLACE YOUR API KEYS HERE <<<<<<<<<<<
 
-            // Function to fetch the live diesel price
+                // Function to fetch the live diesel price
     async function fetchDieselPrice() {
         const dieselInput = document.getElementById('diesel_price');
         dieselInput.value = "Fetching latest price...";
         
-        // >>>>> REPLACE "YOUR_ACTUAL_EIA_KEY" WITH YOUR REAL KEY <<<<<
-        const apiKey = 'YOUR_ACTUAL_EIA_KEY';
-        // New, simpler API endpoint
-        const url = `https://api.eia.gov/v2/petroleum/pri/dfp1/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPD2D&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1`;
-
+        // Your Cloudflare Worker URL
+        const WORKER_URL = 'https://truckingcalculator.silalatif.workers.dev';
+        
         try {
-            // Try without a proxy first
-            const response = await fetch(url);
+            const response = await fetch(WORKER_URL);
             
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) {
+                throw new Error('Failed to fetch from worker');
+            }
             
             const data = await response.json();
-            if (data.response?.data[0]?.value) {
+            
+            if (data.response && data.response.data && data.response.data[0] && data.response.data[0].value) {
                 dieselInput.value = data.response.data[0].value;
-                return; // Success! Exit the function.
             } else {
                 throw new Error("No price data in response");
             }
         } catch (error) {
-            console.error("Direct API call failed, trying proxy...", error);
-            // If direct call fails, try with a proxy
-            try {
-                const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + url;
-                const proxyResponse = await fetch(proxyUrl);
-                const proxyData = await proxyResponse.json();
-                if (proxyData.response?.data[0]?.value) {
-                    dieselInput.value = proxyData.response.data[0].value;
-                } else {
-                    throw new Error("Proxy also failed");
-                }
-            } catch (proxyError) {
-                console.error("All methods failed:", proxyError);
-                dieselInput.value = "4.50";
-                alert("Live price unavailable. Using $4.50/gallon.");
-            }
+            console.error("Error fetching diesel price:", error);
+            dieselInput.value = "4.50"; // Fallback price
         }
     }
-
     // NEW: Get accurate distance using Google Maps API
     async function get AccurateDistance(origin, destination) {
         // If user doesn't enter two cities, use a default
@@ -310,6 +294,7 @@
     });
 </script></body>
 </html>
+
 
 
 
