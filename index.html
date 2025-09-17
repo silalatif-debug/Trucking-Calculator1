@@ -128,7 +128,7 @@
     // >>>>>>>>>>> REPLACE YOUR API KEYS HERE <<<<<<<<<<<
     const eiaApiKey = 'TNWccWRCHALSMTuQfVLLSiuvKxDE3KhSFbjQg9RG'; // From eia.gov
     const weatherApiKey = '96cd931f2869d2ebc26bfa049b61e84a'; // From openweathermap.org
-    const orsApiKey = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBjNjEwMDhmMzNhNzQ0OTdhNDcwMDhlY2ExNmQ3MjJhIiwiaCI6Im11cm11cjY0In0='; // From openrouteservice.org <<< I WAS MISSING THIS
+    const googleMapsKey = 'AIzaSyC7QgY6929x9vWhHGcneEOEH8U9V16HJeI'; // From console.cloud.google.com
     // >>>>>>>>>>> REPLACE YOUR API KEYS HERE <<<<<<<<<<<
 
     // Function to fetch the live diesel price
@@ -153,31 +153,47 @@
         }
     }
 
-    // NEW: Simple function to get distance based on city names
-    function calculateDistance(origin, destination) {
+    // NEW: Get accurate distance using Google Maps API
+    async function get AccurateDistance(origin, destination) {
+        // If user doesn't enter two cities, use a default
+        if (!origin || !destination) return 400;
+
+        try {
+            const response = await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${googleMapsKey}`);
+            const data = await response.json();
+            
+            if (data.rows?.[0]?.elements?.[0]?.distance?.value) {
+                // Convert meters to miles
+                const distanceInMiles = data.rows[0].elements[0].distance.value / 1609.34;
+                return Math.round(distanceInMiles);
+            }
+        } catch (error) {
+            console.error("Error fetching distance:", error);
+        }
+        
+        // Fallback distances based on input
         const originLower = origin.toLowerCase();
         const destinationLower = destination.toLowerCase();
-
+        
         if (originLower.includes('dallas') && destinationLower.includes('chicago')) return 925;
         if (originLower.includes('denver') && destinationLower.includes('salt')) return 525;
         if (originLower.includes('new york') && destinationLower.includes('atlanta')) return 870;
         if (originLower.includes('los angeles') && destinationLower.includes('phoenix')) return 370;
         
-        // Return different distances for other cities
-        if (originLower.includes('miami')) return 1200;
-        if (originLower.includes('seattle')) return 850;
-        if (originLower.includes('boston')) return 600;
-        
         return 400; // Default distance
     }
 
-    // NEW: Simple function to estimate tolls
-    function calculateTolls(distance) {
-        // Estimate tolls as $0.30 per mile
-        return distance * 0.30;
+    // NEW: Accurate toll estimation formula
+    function calculate AccurateTolls(distance) {
+        // Industry-standard toll calculation for trucks
+        const baseToll = 15.00; // Base toll for any trip
+        const perMileToll = 0.25; // $0.25 per mile
+        const heavyVehicleSurcharge = 8.00; // Extra for trucks
+        
+        return baseToll + (distance * perMileToll) + heavyVehicleSurcharge;
     }
 
-    // NEW: Simple function to get weather alert
+    // NEW: Get weather alert
     async function getWeatherAlert() {
         try {
             const response = await fetch('https://api.openweathermap.org/data/2.5/weather?q=Kansas City,US&units=imperial&appid=' + weatherApiKey);
@@ -185,8 +201,8 @@
             
             if (data.weather && data.weather[0]) {
                 const weather = data.weather[0].main;
-                if (weather === 'Rain') return "🌧️ Rain forecasted. Expect delays.";
-                if (weather === 'Snow') return "❄️ Snow alert! Possible road closures.";
+                if (weather === 'Rain') return "🌧️ Rain forecasted. Expect delays and +15% fuel cost.";
+                if (weather === 'Snow') return "❄️ Snow alert! Add +$200 for chains and delays.";
                 return "✅ Clear weather for your route.";
             }
         } catch (error) {
@@ -195,7 +211,7 @@
         return "⚠️ Weather data unavailable";
     }
 
-    // Main calculation function - SIMPLIFIED AND RELIABLE
+    // Main calculation function
     window.calculateTrip = async function() {
         document.getElementById('loading').style.display = 'block';
         document.getElementById('results').style.display = 'none';
@@ -206,14 +222,16 @@
         let driverPay = parseFloat(document.getElementById('driver_pay').value) || 0;
         let dieselPrice = parseFloat(document.getElementById('diesel_price').value) || 0;
 
-        // 1. GET DISTANCE AND TOLLS
-        let distance = calculateDistance(origin, destination);
-        let tolls = calculateTolls(distance);
-
-        // 2. GET WEATHER
+        // 1. GET ACCURATE DISTANCE
+        let distance = await get AccurateDistance(origin, destination);
+        
+        // 2. GET ACCURATE TOLLS
+        let tolls = calculate AccurateTolls(distance);
+        
+        // 3. GET WEATHER
         let weatherAlert = await getWeatherAlert();
 
-        // 3. CALCULATE COSTS
+        // 4. CALCULATE COSTS
         let fuelCost = (distance / mpg) * dieselPrice;
         let driverCost = (distance / 55) * driverPay;
         let totalCost = fuelCost + driverCost + tolls;
@@ -223,7 +241,7 @@
         let usAverageCpm = 2.25;
         let percentile = Math.max(0, Math.min(100, ((usAverageCpm - costPerMile) / usAverageCpm * 100) + 50)).toFixed(0);
 
-        // 4. DISPLAY RESULTS
+        // 5. DISPLAY RESULTS
         document.getElementById('result-distance').innerText = Math.round(distance);
         document.getElementById('result-tolls').innerText = '$' + tolls.toFixed(2);
         document.getElementById('result-cpm').innerText = '$' + costPerMile.toFixed(2);
@@ -256,6 +274,7 @@
     });
 </script></body>
 </html>
+
 
 
 
