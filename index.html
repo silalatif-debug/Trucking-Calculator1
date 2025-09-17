@@ -131,14 +131,15 @@
     const googleMapsKey = 'AIzaSyC7QgY6929x9vWhHGcneEOEH8U9V16HJeI'; // From console.cloud.google.com
     // >>>>>>>>>>> REPLACE YOUR API KEYS HERE <<<<<<<<<<<
 
-    // Function to fetch the live diesel price
+        // Function to fetch the live diesel price
     async function fetchDieselPrice() {
         const dieselInput = document.getElementById('diesel_price');
         dieselInput.value = "Fetching latest price...";
         
-        // Use a more reliable CORS proxy
+        // >>>>> REPLACE "YOUR_ACTUAL_EIA_KEY" WITH YOUR REAL KEY <<<<<
+        const eiaUrl = "https://api.eia.gov/v2/petroleum/pri/dfp1/data/?frequency=weekly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPD2D&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1&api_key=YOUR_ACTUAL_EIA_KEY";
+        
         const proxyUrl = 'https://corsproxy.io/?';
-        const eiaUrl = `https://api.eia.gov/v2/petroleum/pri/dfp1/data/?frequency=weekly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPD2D&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1&api_key=${eiaApiKey}`;
 
         // Set a timeout to avoid hanging forever
         const timeout = new Promise((_, reject) => 
@@ -312,6 +313,7 @@
     });
 </script></body>
 </html>
+
 
 
 
