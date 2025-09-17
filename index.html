@@ -238,7 +238,7 @@
         let distance = await get AccurateDistance(origin, destination);
         
         // 2. GET ACCURATE TOLLS
-        let tolls = calculate AccurateTolls(distance);
+        let tolls = calculateAccurateTolls(distance);
         
         // 3. GET WEATHER
         let weatherAlert = await getWeatherAlert();
@@ -313,6 +313,7 @@
     });
 </script></body>
 </html>
+
 
 
 
