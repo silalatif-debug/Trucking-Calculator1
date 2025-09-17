@@ -154,23 +154,27 @@
 
     // NEW SIMPLE FUNCTION TO GET MILES BETWEEN CITIES
     function getDistance(origin, destination) {
-        // Simple distance lookup table for common routes
-        const routes = {
-            'dallas-chicago': 925,
-            'denver-salt lake city': 525,
-            'new york-atlanta': 870,
-            'los angeles-phoenix': 370
-        };
-        const key = `${origin.toLowerCase()}-${destination.toLowerCase()}`;
-        
-        // Check if we have a predefined distance
-        for (const [route, dist] of Object.entries(routes)) {
-            if (key.includes(route)) return dist;
+        // Convert inputs to lowercase for easier matching
+        origin = origin.toLowerCase();
+        destination = destination.toLowerCase();
+
+        // Check for specific city pairs
+        if ((origin.includes('dallas') && destination.includes('chicago')) ||
+            (origin.includes('chicago') && destination.includes('dallas'))) {
+            return 925;
         }
-        
-        // Default estimated distance (1.5x straight-line distance)
-        return 400; // Fallback
-    }
+        else if ((origin.includes('denver') && destination.includes('salt')) ||
+                 (origin.includes('salt') && destination.includes('denver'))) {
+            return 525;
+        }
+        else if ((origin.includes('new york') && destination.includes('atlanta')) ||
+                 (origin.includes('atlanta') && destination.includes('new york'))) {
+            return 870;
+        }
+        else if ((origin.includes('los angeles') && destination.includes('phoenix')) ||
+                 (origin.includes('phoenix') && destination.includes('los angeles'))) {
+            return 370;
+        }
 
     // NEW SIMPLE FUNCTION TO ESTIMATE TOLLS
     function estimateTolls(distance) {
@@ -257,4 +261,5 @@
 </script>
 </body>
 </html>
+
 
