@@ -131,37 +131,46 @@
     const googleMapsKey = 'AIzaSyC7QgY6929x9vWhHGcneEOEH8U9V16HJeI'; // From console.cloud.google.com
     // >>>>>>>>>>> REPLACE YOUR API KEYS HERE <<<<<<<<<<<
 
-        // Function to fetch the live diesel price
+            // Function to fetch the live diesel price
     async function fetchDieselPrice() {
         const dieselInput = document.getElementById('diesel_price');
         dieselInput.value = "Fetching latest price...";
         
         // >>>>> REPLACE "YOUR_ACTUAL_EIA_KEY" WITH YOUR REAL KEY <<<<<
-        const eiaUrl = "https://api.eia.gov/v2/petroleum/pri/dfp1/data/?frequency=weekly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPD2D&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1&api_key=YOUR_ACTUAL_EIA_KEY";
-        
-        const proxyUrl = 'https://corsproxy.io/?';
-
-        // Set a timeout to avoid hanging forever
-        const timeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 5000) // 5 second timeout
-        );
+        const apiKey = 'YOUR_ACTUAL_EIA_KEY';
+        // New, simpler API endpoint
+        const url = `https://api.eia.gov/v2/petroleum/pri/dfp1/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[duoarea][]=NUS&facets[product][]=EPD2D&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1`;
 
         try {
-            const response = await Promise.race([fetch(proxyUrl + eiaUrl), timeout]);
+            // Try without a proxy first
+            const response = await fetch(url);
             
             if (!response.ok) throw new Error('Network response was not ok');
             
             const data = await response.json();
             if (data.response?.data[0]?.value) {
                 dieselInput.value = data.response.data[0].value;
+                return; // Success! Exit the function.
             } else {
                 throw new Error("No price data in response");
             }
         } catch (error) {
-            console.error("Error fetching live diesel price:", error);
-            // Alert the user but still show a reasonable default
-            alert("Note: Could not fetch the live diesel price at this moment. Using the U.S. average of $4.50/gallon for calculation. Please check back later for live pricing.");
-            dieselInput.value = "4.50";
+            console.error("Direct API call failed, trying proxy...", error);
+            // If direct call fails, try with a proxy
+            try {
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + url;
+                const proxyResponse = await fetch(proxyUrl);
+                const proxyData = await proxyResponse.json();
+                if (proxyData.response?.data[0]?.value) {
+                    dieselInput.value = proxyData.response.data[0].value;
+                } else {
+                    throw new Error("Proxy also failed");
+                }
+            } catch (proxyError) {
+                console.error("All methods failed:", proxyError);
+                dieselInput.value = "4.50";
+                alert("Live price unavailable. Using $4.50/gallon.");
+            }
         }
     }
 
@@ -301,6 +310,7 @@
     });
 </script></body>
 </html>
+
 
 
 
